@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TBR Game 💗📚</title>
+
+<style>
+:root{
+  --bg1:#ffe9f7;
+  --bg2:#efe7ff;
+  --card:#ffffff;
+  --stroke:rgba(234,220,243,.9);
+  --text:#3b2b47;
+  --muted:#8c6fa3;
+  --pink:#ff8fdc;
+  --purple:#b993ff;
+  --shadow:0 12px 35px rgba(160,120,190,.18);
+  --radius:18px;
+
+  --postit:#fff6a8;
+  --postit2:#ffe9a6;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  color:var(--text);
+  min-height:100vh;
+  background:
+    radial-gradient(900px 700px at 15% 20%, rgba(255,143,220,.55) 0%, transparent 60%),
+    radial-gradient(900px 700px at 85% 25%, rgba(185,147,255,.55) 0%, transparent 60%),
+    linear-gradient(135deg,var(--bg1),var(--bg2));
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:26px 16px 40px;
+}
+
+h1{ margin:0 0 6px; font-size: clamp(22px, 3vw, 32px); }
+.sub{ margin:0 0 14px; color:var(--muted); line-height:1.35; }
+
+.card{
+  background:var(--card);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+
+.left{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+
+.btn{
+  border:none;
+  border-radius:14px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:850;
+  color:var(--text);
+  background:#f4ecf9;
+  box-shadow:0 8px 18px rgba(0,0,0,.06);
+  transition: transform .06s ease, filter .2s ease;
+}
+.btn:hover{ filter: brightness(.98); }
+.btn:active{ transform: translateY(1px); }
+
+.btn.primary{
+  color:white;
+  background:linear-gradient(90deg,var(--pink),var(--purple));
+}
+
+.toggle{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  padding:10px 12px;
+  border-radius:14px;
+  background:#faf7ff;
+  border:1px solid var(--stroke);
+  color:var(--muted);
+  font-size:13px;
+  font-weight:800;
+}
+
+.pills{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.pill{
+  padding:7px 10px;
+  border-radius:999px;
+  background:#faf7ff;
+  border:1px solid var(--stroke);
+  color:var(--muted);
+  font-size:13px;
+  font-weight:800;
+}
+.pill strong{ color:var(--text); }
+
+.board{
+  display:grid;
+  gap:10px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.cell{
+  border-radius:16px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(0,0,0,.04);
+  box-shadow:0 8px 18px rgba(0,0,0,.05);
+  cursor:pointer;
+  transition: transform .08s ease, filter .2s ease;
+  position:relative;
+  overflow:hidden;
+  line-height:1.25;
+  font-size:13px;
+}
+.cell:hover{ transform: translateY(-1px); filter: brightness(.99); }
+.cell.active{
+  outline:3px solid rgba(255,143,220,.85);
+  box-shadow:0 18px 35px rgba(255,143,220,.18), 0 18px 35px rgba(185,147,255,.12);
+}
+.cell:before{
+  content:"";
+  position:absolute;
+  inset:-40px -60px auto auto;
+  width:120px;
+  height:120px;
+  background: rgba(255,255,255,.32);
+  transform: rotate(25deg);
+  border-radius: 30px;
+}
+
+.log{
+  margin-top:14px;
+  font-size:12px;
+  color:var(--muted);
+  white-space:pre-line;
+  background:#faf7ff;
+  border:1px solid var(--stroke);
+  border-radius:16px;
+  padding:12px;
+}
+
+/* Confetti */
+#confetti{
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:9998;
+  overflow:hidden;
+}
+.confetti{
+  position:absolute;
+  width:10px; height:14px;
+  border-radius:3px;
+  animation:fall 900ms linear forwards;
+}
+@keyframes fall{
+  to{ transform:translateY(110vh) rotate(720deg); opacity:0; }
+}
+
+/* Result modal */
+#modalWrap{
+  position:fixed; inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  padding:18px;
+  background: rgba(50, 20, 60, .18);
+  backdrop-filter: blur(4px);
+}
+.modal{
+  width:min(680px, 100%);
+  border-radius:22px;
+  background: linear-gradient(180deg, #ffffff, #faf7ff);
+  border:1px solid var(--stroke);
+  box-shadow: 0 26px 70px rgba(0,0,0,.18);
+  padding:16px;
+}
+.modalTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.modalTitle{
+  font-weight:950;
+  font-size:14px;
+  color: var(--muted);
+  letter-spacing:.3px;
+}
+.close{
+  border:none;
+  cursor:pointer;
+  border-radius:14px;
+  padding:8px 10px;
+  font-weight:900;
+  background:#f4ecf9;
+}
+.resultBig{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  padding:12px;
+  border-radius:18px;
+  background: white;
+  border:1px solid rgba(0,0,0,.04);
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+}
+.emoji{
+  font-size:26px;
+  line-height:1;
+  margin-top:2px;
+  white-space: pre-line;
+}
+.resultText{
+  font-size: clamp(18px, 2.4vw, 26px);
+  font-weight: 950;
+  line-height:1.15;
+}
+.resultSub{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.35;
+  white-space: pre-line;
+}
+.modalBtns{
+  margin-top:12px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* ===== Jar + Post-it styling ===== */
+.jarArea{
+  margin: 8px 0 6px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+
+.jarCard{
+  flex: 1 1 320px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px;
+  border-radius:18px;
+  background: linear-gradient(180deg, #fff, #faf7ff);
+  border:1px solid var(--stroke);
+}
+
+.jarTitle{
+  font-weight:950;
+  margin:0;
+}
+.jarHint{
+  margin:2px 0 0;
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+.jarVisual{
+  width:104px;
+  height:120px;
+  position:relative;
+  flex: 0 0 auto;
+}
+
+/* lid */
+.jarVisual .lid{
+  position:absolute;
+  top:0;
+  left:10px;
+  right:10px;
+  height:22px;
+  border-radius:14px;
+  background: linear-gradient(90deg, rgba(185,147,255,.95), rgba(255,143,220,.95));
+  box-shadow: 0 10px 18px rgba(0,0,0,.10);
+}
+
+/* glass */
+.jarVisual .glass{
+  position:absolute;
+  top:18px;
+  left:0;
+  right:0;
+  bottom:0;
+  border-radius:22px;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.25));
+  border: 2px solid rgba(255,255,255,.55);
+  box-shadow: inset 0 0 0 2px rgba(185,147,255,.16);
+  overflow:hidden;
+}
+
+/* papers inside (gentle float) */
+.paper{
+  position:absolute;
+  width:26px; height:18px;
+  border-radius:4px;
+  background: rgba(255,255,255,.85);
+  border:1px solid rgba(0,0,0,.05);
+  box-shadow: 0 5px 12px rgba(0,0,0,.08);
+  transform: rotate(var(--r, 0deg));
+  left: var(--x, 10px);
+  top: var(--y, 30px);
+  animation: floaty var(--d, 3.4s) ease-in-out infinite;
+}
+@keyframes floaty{
+  0%,100%{ transform: translateY(0px) rotate(var(--r,0deg)); }
+  50%{ transform: translateY(-4px) rotate(calc(var(--r,0deg) + 2deg)); }
+}
+.paper.pink{ background: rgba(255, 209, 238, .92); }
+.paper.lav{ background: rgba(217, 199, 255, .92); }
+.paper.blue{ background: rgba(207, 232, 255, .92); }
+.paper.mint{ background: rgba(200, 255, 232, .92); }
+
+/* subtle shine */
+.jarVisual .glass:after{
+  content:"";
+  position:absolute;
+  top:6px; bottom:6px;
+  left:10px;
+  width:18px;
+  border-radius:16px;
+  background: rgba(255,255,255,.35);
+}
+
+/* Paper fly out animation */
+.flyPaper{
+  position:absolute;
+  left:50%;
+  top:62px;
+  width:28px;
+  height:20px;
+  border-radius:5px;
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow: 0 14px 22px rgba(0,0,0,.15);
+  transform: translateX(-50%);
+  opacity:0;
+  pointer-events:none;
+}
+.flyPaper.run{
+  animation: flyout 520ms ease-out forwards;
+}
+@keyframes flyout{
+  0%{ opacity:0; transform: translateX(-50%) translateY(10px) rotate(-6deg) scale(.9); }
+  40%{ opacity:1; transform: translateX(-50%) translateY(-30px) rotate(10deg) scale(1); }
+  100%{ opacity:0; transform: translateX(-50%) translateY(-58px) rotate(-8deg) scale(.96); }
+}
+
+/* Post-it in modal */
+.postitWrap{
+  margin-top:10px;
+  display:flex;
+  justify-content:center;
+}
+.postit{
+  width:min(520px, 100%);
+  background: linear-gradient(180deg, var(--postit), var(--postit2));
+  border-radius:14px 14px 10px 10px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.16);
+  border: 1px solid rgba(0,0,0,.08);
+  padding:14px 14px 18px;
+  position:relative;
+  transform: rotate(-1deg);
+  animation: popIn 220ms ease-out;
+}
+@keyframes popIn{
+  from{ transform: rotate(-2deg) scale(.97); opacity:.6; }
+  to{ transform: rotate(-1deg) scale(1); opacity:1; }
+}
+.postit:before{
+  content:"";
+  position:absolute;
+  left:0; right:0;
+  top:0;
+  height:10px;
+  border-radius:14px 14px 0 0;
+  background: rgba(255,255,255,.35);
+}
+.postit .label{
+  font-weight:950;
+  color: rgba(60,40,70,.85);
+  font-size:12px;
+  letter-spacing:.4px;
+}
+.postit .book{
+  margin-top:8px;
+  font-size: clamp(18px, 2.4vw, 26px);
+  font-weight: 950;
+  line-height:1.15;
+}
+.postit .note{
+  margin-top:10px;
+  color: rgba(60,40,70,.75);
+  font-size:13px;
+  line-height:1.35;
+  white-space: pre-line;
+}
+</style>
+</head>
+
+<body>
+<div id="confetti"></div>
+
+<div class="container">
+  <h1>💗 TBR Game</h1>
+  <p class="sub">Tryck <strong>PLAY</strong> när du inte vet vad du ska läsa. Rutorna blandas och du får ett tydligt resultat ✨</p>
+
+  <div class="card">
+
+    <div class="jarArea">
+      <div class="jarCard">
+        <div class="jarVisual" id="jarVisual" aria-hidden="true">
+          <div class="lid"></div>
+          <div class="glass">
+            <div class="paper pink" style="--x:14px;--y:38px;--r:-12deg;--d:3.6s"></div>
+            <div class="paper lav"  style="--x:55px;--y:40px;--r:10deg;--d:3.2s"></div>
+            <div class="paper blue" style="--x:24px;--y:58px;--r:6deg;--d:3.9s"></div>
+            <div class="paper mint" style="--x:60px;--y:63px;--r:-6deg;--d:3.4s"></div>
+            <div class="paper pink" style="--x:40px;--y:78px;--r:14deg;--d:3.1s"></div>
+            <div class="paper lav"  style="--x:18px;--y:86px;--r:-4deg;--d:3.8s"></div>
+          </div>
+          <div class="flyPaper" id="flyPaper"></div>
+        </div>
+
+        <div>
+          <p class="jarTitle">🫙 TBR Jar</p>
+          <p class="jarHint">Klicka <strong>TBR Jar</strong> för att dra en bok. Nu “flyger” en lapp upp och landar som post-it ✨</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="left">
+        <button class="btn primary" id="playBtn">PLAY ✨</button>
+        <button class="btn" id="jarBtn">TBR Jar 🫙</button>
+        <button class="btn" id="shuffleBtn">Blanda rutor</button>
+        <button class="btn" id="copyBtn">Kopiera senaste</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+
+      <label class="toggle" title="Om på: PLAY går igenom allt innan den börjar om.">
+        <input type="checkbox" id="noRepeats" checked />
+        No repeats
+      </label>
+    </div>
+
+    <div class="pills">
+      <div class="pill">Drag: <strong id="drawCount">0</strong></div>
+      <div class="pill">Kvar (no repeats): <strong id="remaining">-</strong></div>
+      <div class="pill">Senaste: <strong id="lastText">-</strong></div>
+    </div>
+
+    <div style="height:12px"></div>
+    <div class="board" id="board"></div>
+
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<!-- Result modal -->
+<div id="modalWrap" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modalTop">
+      <div class="modalTitle">RESULTAT</div>
+      <button class="close" id="closeModal">Stäng</button>
+    </div>
+
+    <div class="resultBig">
+      <div class="emoji" id="modalEmoji">💗</div>
+      <div>
+        <div class="resultText" id="modalText">—</div>
+        <div class="resultSub" id="modalSub">—</div>
+
+        <div class="postitWrap" id="postitWrap" style="display:none;">
+          <div class="postit">
+            <div class="label">TBR JAR • DIN BOK</div>
+            <div class="book" id="postitBook">—</div>
+            <div class="note">Det här är din nästa bok 😈💗</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modalBtns">
+      <button class="btn primary" id="modalPlayAgain">PLAY igen ✨</button>
+      <button class="btn" id="modalJar">TBR Jar 🫙</button>
+      <button class="btn" id="modalCopy">Kopiera</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* UTMANINGAR */
+const baseChallenges = [
+  "TBR Jar",
+  "TBR Jar (blind draw)",
+  "TBR Jar (no take backs 😈)",
+  "TBR Jar (dramatic reveal 😂)",
+  "TBR Jar (mystery: titta inte på titeln förrän start)",
+  "TBR Jar (double draw: dra två, läs första)",
+  "TBR Jar (lucky draw: dra tre, välj en)",
+  "TBR Jar (vibe-first: välj läsplats, sen dra)",
+
+  "Välj en thriller",
+  "Välj en romantasy",
+  "Välj en fantasy",
+  "Välj en romance",
+  "Välj YA",
+  "Välj cozy/feelgood",
+  "Välj dark academia vibes",
+  "Välj skräck/mörk bok",
+  "Välj sci-fi",
+  "Välj historisk fiction",
+
+  "Välj enemies to lovers",
+  "Välj friends to lovers",
+  "Välj rivals-to-lovers",
+  "Välj grumpy x sunshine",
+  "Välj slow burn",
+  "Välj found family",
+  "Välj morally grey huvudkaraktär",
+  "Välj “court politics/royalty”-vibes",
+  "Välj “academy/school”-vibes",
+  "Välj “heist/crew/mission”-vibes",
+  "Välj “vibes > plot”",
+
+  "Äldsta boken i din TBR",
+  "Nyaste bokköpet",
+  "Bok du glömt att du äger",
+  "Bok med snyggast omslag",
+  "Bok med rosa på omslaget",
+  "Bok med lila på omslaget",
+  "Bok med blommor på omslaget",
+  "Bok med ett djur på omslaget",
+  "Bok med guld/glitter vibes på omslaget",
+  "Bok med ett ord i titeln",
+  "Bok med ett namn i titeln",
+  "Slumpa från hyllan (blunda + peka)",
+  "Räkna 10 böcker in → ta den",
+  "Välj boken du tror blir 5⭐",
+  "Välj boken du tror blir 3⭐ (utmana dig)",
+  "Välj en du alltid skjuter upp",
+  "Välj en du är lite rädd för att börja (men gör det 😈)",
+
+  "Välj en fristående bok (standalone)",
+  "Starta en ny serie (bok 1)",
+  "Fortsätt en serie du påbörjat",
+  "Välj nästa bok i en serie du redan älskar",
+  "Välj en duologi-start",
+  "Välj en trilogi-start",
+
+  "Välj en hypead BookTok-bok (som du äger)",
+  "Välj en bok du sett 3+ gånger på TikTok/IG",
+  "Välj en bok känd för plot twist",
+  "Välj en bok känd för chemistry",
+  "Välj en bok känd för worldbuilding",
+
+  "Välj helt fritt (joker)",
+  "Dra två alternativ och välj den som känns mest rätt",
+  "Om du tvekar: välj den du tänker på först",
+  "Välj den bok som matchar din mood idag",
+  "Välj den som har kortast titel (lol)",
+  "Välj den som har snyggast rygg i hyllan",
+  "Välj den du skulle rekommendera till ‘bok-klubb Therese’"
+];
+
+const extraChallenges = [
+  "Välj en bok med 1 POV",
+  "Välj en bok med flera POV",
+  "Välj en bok med “mystery element”",
+  "Välj en bok med “quest/adventure”",
+  "Välj en bok med stark female main character",
+  "Välj en bok som känns som “autumn vibes”",
+  "Välj en bok som känns som “winter vibes”",
+  "Välj en bok som känns som “spring vibes”",
+  "Välj en bok som känns som “summer vibes”",
+  "Välj en bok som är mer action än romance",
+  "Välj en bok som är mer romance än action",
+  "Välj en bok du köpt pga omslag",
+  "Välj en bok som ligger närmast dig just nu",
+  "Välj en bok som är längst bort i hyllan (lol)",
+  "Välj en bok du vill kunna prata om efteråt",
+  "Välj en bok du vill ‘sluka’",
+  "Välj en bok du vill ‘mysläsa’",
+  "Välj en bok du vill bli överraskad av",
+  "Välj en bok du tror blir en ny favorit",
+  "Välj en bok som känns lite ‘random’"
+];
+
+const challenges = [...baseChallenges, ...extraChallenges];
+
+/* TBR JAR böcker (lägg till fler som du vill) */
+const tbrJarBooks = [
+  "A Court of Thorns and Roses – Sarah J. Maas",
+  "Divine Rivals – Rebecca Ross",
+  "Powerless – Lauren Roberts",
+  "One Dark Window – Rachel Gillig",
+  "Belladonna – Adalyn Grace",
+  "The Serpent and the Wings of Night – Carissa Broadbent",
+  "Once Upon a Broken Heart – Stephanie Garber",
+  "A Good Girl’s Guide to Murder – Holly Jackson",
+  "Beach Read – Emily Henry",
+  "The Housemaid – Freida McFadden",
+  "Crescent City – Sarah J. Maas",
+  "Shatter Me – Tahereh Mafi",
+  "Ett litet liv – Hanya Yanagihara"
+];
+
+/* UI / Logic */
+const boardEl = document.getElementById("board");
+const logEl = document.getElementById("log");
+const drawCountEl = document.getElementById("drawCount");
+const remainingEl = document.getElementById("remaining");
+const lastTextEl = document.getElementById("lastText");
+const noRepeatsEl = document.getElementById("noRepeats");
+
+const modalWrap = document.getElementById("modalWrap");
+const modalEmoji = document.getElementById("modalEmoji");
+const modalText = document.getElementById("modalText");
+const modalSub = document.getElementById("modalSub");
+
+const postitWrap = document.getElementById("postitWrap");
+const postitBook = document.getElementById("postitBook");
+
+const confettiLayer = document.getElementById("confetti");
+const flyPaper = document.getElementById("flyPaper");
+
+let drawCount = 0;
+let lastPickedText = "";
+let activeIndex = null;
+
+let boardOrder = [];
+let pool = [];
+
+function shuffle(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function emojiFor(text){
+  const t = text.toLowerCase();
+  if (t.includes("tbr jar")) return "🫙";
+  if (t.includes("thriller")) return "🔪";
+  if (t.includes("romantasy")) return "🐉";
+  if (t.includes("fantasy")) return "✨";
+  if (t.includes("romance")) return "💞";
+  if (t.includes("ya")) return "🎒";
+  if (t.includes("cozy")) return "☕";
+  if (t.includes("dark academia")) return "🖋️";
+  if (t.includes("skräck") || t.includes("mörk")) return "🕯️";
+  if (t.includes("sci-fi")) return "🪐";
+  if (t.includes("historisk")) return "🏛️";
+  if (t.includes("joker")) return "🃏";
+  if (t.includes("omslag")) return "🎀";
+  if (t.includes("serie")) return "📚";
+  if (t.includes("tiktok") || t.includes("booktok")) return "📱";
+  return "💗";
+}
+
+function log(line){
+  const now = new Date().toLocaleString("sv-SE");
+  logEl.textContent = `[${now}] ${line}\n` + logEl.textContent;
+}
+
+function popConfetti(){
+  const colors = ["#ff8fdc","#b993ff","#ffd1ee","#d9c7ff","#cfe8ff","#c8ffe8","#ffe1a6"];
+  for(let i=0;i<24;i++){
+    const d=document.createElement("div");
+    d.className="confetti";
+    d.style.left=(10 + Math.random()*80) + "vw";
+    d.style.top=(-20 - Math.random()*60) + "px";
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(700+Math.random()*500)+"ms";
+    d.style.width=(8+Math.random()*8)+"px";
+    d.style.height=(10+Math.random()*12)+"px";
+    confettiLayer.appendChild(d);
+    setTimeout(()=>d.remove(), 1300);
+  }
+}
+
+function showModal(text, subText){
+  postitWrap.style.display = "none";
+  modalEmoji.textContent = emojiFor(text);
+  modalText.textContent = text;
+  modalSub.textContent = subText || "";
+  modalWrap.style.display = "flex";
+}
+
+function showJarPostit(book){
+  modalEmoji.textContent = "🫙";
+  modalText.textContent = "TBR Jar";
+  modalSub.textContent = "Du drog en bok! 💗";
+
+  postitBook.textContent = book;
+  postitWrap.style.display = "flex";
+  modalWrap.style.display = "flex";
+}
+
+function closeModal(){
+  modalWrap.style.display = "none";
+}
+
+function resetBoardOrder(){
+  boardOrder = challenges.map((_,i)=>i);
+  shuffle(boardOrder);
+  resetPool();
+  renderBoard();
+}
+
+function resetPool(){
+  pool = boardOrder.map((_,pos)=>pos);
+  shuffle(pool);
+  updateRemaining();
+}
+
+function updateRemaining(){
+  remainingEl.textContent = noRepeatsEl.checked ? String(pool.length) : "∞";
+}
+
+function renderBoard(){
+  boardEl.innerHTML = "";
+  boardOrder.forEach((challengeIndex, pos)=>{
+    const text = challenges[challengeIndex];
+    const cell = document.createElement("div");
+    cell.className = "cell" + (pos === activeIndex ? " active" : "");
+    cell.textContent = text;
+    cell.addEventListener("click", ()=> pickByBoardPos(pos, "KLICK"));
+    boardEl.appendChild(cell);
+  });
+}
+
+function pickRandomBoardPos(){
+  if (!noRepeatsEl.checked){
+    return Math.floor(Math.random()*boardOrder.length);
+  }
+  if (pool.length === 0) resetPool();
+  return pool.pop();
+}
+
+function pickByBoardPos(pos, source){
+  activeIndex = pos;
+  const text = challenges[ boardOrder[pos] ];
+  lastPickedText = text;
+
+  drawCount++;
+  drawCountEl.textContent = String(drawCount);
+  lastTextEl.textContent = text;
+
+  renderBoard();
+  updateRemaining();
+  log(`${source} → "${text}"`);
+
+  const sub = text.toLowerCase().includes("tbr jar")
+    ? "Du landade på TBR Jar! Klicka TBR Jar-knappen för att dra en bok 🫙"
+    : "Det här är din riktning. Välj en bok som matchar rutan 💗";
+  showModal(text, sub);
+}
+
+/* Fly-out animation helper */
+function playJarAnimation(){
+  const colors = ["rgba(255,209,238,.92)","rgba(217,199,255,.92)","rgba(207,232,255,.92)","rgba(200,255,232,.92)"];
+  flyPaper.style.background = colors[Math.floor(Math.random()*colors.length)];
+  flyPaper.classList.remove("run");
+  void flyPaper.offsetWidth; // restart animation
+  flyPaper.classList.add("run");
+}
+
+/* TBR Jar – fly paper + post-it */
+function jarPick(){
+  if(!tbrJarBooks.length) return alert("Lägg in böcker i tbrJarBooks 🙂");
+  const book = tbrJarBooks[Math.floor(Math.random()*tbrJarBooks.length)];
+
+  playJarAnimation();
+  popConfetti();
+
+  // liten delay så det känns som att lappen "flyger upp" innan post-it visas
+  setTimeout(()=> showJarPostit(book), 260);
+
+  log(`TBR JAR → ${book}`);
+}
+
+/* Copy */
+async function copyLatest(){
+  if (!lastPickedText) return alert("Tryck PLAY först 🙂");
+  try{
+    await navigator.clipboard.writeText(lastPickedText);
+    log(`Kopierade: "${lastPickedText}"`);
+    alert("Kopierat! ✅");
+  }catch{
+    alert("Kunde inte kopiera automatiskt. Markera och kopiera manuellt 🙂");
+  }
+}
+
+/* Buttons */
+document.getElementById("playBtn").addEventListener("click", ()=>{
+  popConfetti();
+  const pos = pickRandomBoardPos();
+  pickByBoardPos(pos, "PLAY");
+});
+
+document.getElementById("jarBtn").addEventListener("click", jarPick);
+
+document.getElementById("shuffleBtn").addEventListener("click", ()=>{
+  resetBoardOrder();
+  log("Blandade rutorna.");
+});
+
+document.getElementById("copyBtn").addEventListener("click", copyLatest);
+
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  drawCount = 0;
+  drawCountEl.textContent = "0";
+  lastPickedText = "";
+  lastTextEl.textContent = "-";
+  activeIndex = null;
+  logEl.textContent = "";
+  resetBoardOrder();
+  log("Reset.");
+});
+
+noRepeatsEl.addEventListener("change", ()=>{
+  resetPool();
+  log(`No repeats: ${noRepeatsEl.checked ? "PÅ" : "AV"}`);
+});
+
+document.getElementById("closeModal").addEventListener("click", closeModal);
+document.getElementById("modalPlayAgain").addEventListener("click", ()=>{
+  closeModal();
+  document.getElementById("playBtn").click();
+});
+document.getElementById("modalJar").addEventListener("click", ()=>{
+  closeModal();
+  jarPick();
+});
+document.getElementById("modalCopy").addEventListener("click", copyLatest);
+
+modalWrap.addEventListener("click", (e)=>{
+  if (e.target === modalWrap) closeModal();
+});
+
+/* Init */
+resetBoardOrder();
+updateRemaining();
+log("Spelet startat.");
+</script>
+</body>
+</html>
